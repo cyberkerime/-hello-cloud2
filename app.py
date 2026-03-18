@@ -39,8 +39,10 @@ HTML = """
         """
 
  def connect_db():
-   conn = psycopg2.connect_db()
-   cur = conn.cursor()
+   conn = psycopg2.connect_db(DATABASE_URL)
+     return conn
+
+  @app.route cur = conn.cursor()
    cur.execute("CREATE TABLE IF NOT EXISTS ziyaretciler (id SERIAL PRIMARY KEY, isim TEXT)")
 
       if request.method == "POST":
