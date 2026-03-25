@@ -2,9 +2,9 @@ from flask import Flask, render_template_string, request
 import os
 import psycopg2
 
-app = Flask(_name_)
+app = Flask(__name__)
 
-# os-getenv yerine os.getenv kullanıldı
+# Veritabanı bağlantı adresi (Çevre değişkeninden al)
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://kerime:zmQrcngUvrnlNKDwCVeOB52nCrjAB4r0@dpg-d6t8r9euk2gs738m1cng-a/hello_cloud2_db_q156 ")
 
 HTML = """
@@ -13,42 +13,44 @@ HTML = """
 <head>
     <title>Buluttan Selam!</title>
     <style>
-        body { font-family: Arial; text-align: center; padding: 50px; background: #eef2f3; }
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #eef2f3; }
         h1 { color: #333; }
         form { margin: 20px auto; }
-        input { padding: 10px; font-size: 16px; }
-        button {padding: 10px 15px; background: #4CAF50; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        input { padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
+        button { padding: 10px 15px; background: #4CAF50; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        button:hover { background: #45a049; }
         ul { list-style: none; padding: 0; }
-        li { background: white; margin: 5px auto; width: 200px; padding: 8px; border-radius: 5px; }
-    </style>
+        li { background: white; margin: 5px auto; width: 250px; padding: 8px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+      </style>
 </head>
-<body>
-     <h1>Buluttan Selam!</h1>
-     <p>Adını yaz, selamını bırak </p>
-     <form method="POST">
-         <input type="text" name="isim" placeholder="Adını yaz" required>
-         <button type="submit">Gönder</button>
-    </form>
-    <h3>Ziyaretçiler:</h3>
-    <ul>
+<body> 
+      <h1>Buluttan Selam!</h1>
+      <p>Adını yaz, selamını bırak</p>
+      <form method="POST">
+          <input type="text" name="isim" placeholder="Adını yaz" required>
+          <button type="submit">Gönder</button>
+      </form>
+     <h3>Ziyaretçiler:</h3>
+<ul>
+    {% if isimler %}
         {% for ad in isimler %}
             <li>{{ ad }}</li>
         {% endfor %}
-    </ul>
-</body>
-</html>
+    {% else %}
+        <li>Henüz kimse yok.</li>
+    {% endif %}
+</ul>
 """
 
-def connect_db():
-    conn = psycopg2.connect(DATABASE_URL)
-    return conn
+def get_db_connection():
+    return psycopg2.connect(DATABASE_URL)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    conn = connect_db()
+    conn = get_db_connection()
     cur = conn.cursor()
     
-    # Tabloyu oluştur
+    # Tabloyu oluştur (Eğer yoksa)
     cur.execute("CREATE TABLE IF NOT EXISTS ziyaretciler (id SERIAL PRIMARY KEY, isim TEXT)")
     conn.commit()
 
@@ -58,7 +60,7 @@ def index():
             cur.execute("INSERT INTO ziyaretciler (isim) VALUES (%s)", (isim,))
             conn.commit()
 
-    # Verileri çek - Bu satırların fonksiyonun içinde (hizalı) olması şart!
+    # Son 10 ismi çek
     cur.execute("SELECT isim FROM ziyaretciler ORDER BY id DESC LIMIT 10")
     isimler = [row[0] for row in cur.fetchall()]
 
@@ -66,6 +68,6 @@ def index():
     conn.close()
     
     return render_template_string(HTML, isimler=isimler)
-     
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=True)
