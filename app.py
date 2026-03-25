@@ -39,7 +39,7 @@ HTML = """
         """
 
  def connect_db():
-   conn = psycopg2.connect_db(DATABASE_URL)
+conn = psycopg2.connect_db(DATABASE_URL)
      return conn
 
   @app.route cur = conn.cursor()
